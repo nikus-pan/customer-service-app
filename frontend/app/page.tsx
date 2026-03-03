@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { MessageCircle, Send, Trash2, LogOut, LogIn, Menu, X, ChevronDown, ShoppingCart, Globe, Plus, Minus, CreditCard } from 'lucide-react';
 import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
@@ -308,9 +307,9 @@ function MainContent() {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
-            <Link href="/products" className="text-dark-600 hover:text-primary-600 font-medium">
-              產品介紹
-            </Link>
+            <a href="/manual" className="text-dark-600 hover:text-primary-600 font-medium">
+              軟體手冊
+            </a>
             {/* Language Selector */}
             <button 
               onClick={() => changeLang(lang === 'zh' ? 'en' : 'zh')}
