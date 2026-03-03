@@ -118,10 +118,22 @@ function MainContent() {
 
   const loadProducts = async () => {
     try {
-      const data = await api.products.list();
-      setProducts(data.products);
+      const storedProducts = localStorage.getItem('admin_products');
+      if (storedProducts) {
+        const parsed = JSON.parse(storedProducts);
+        const productsWithFeatures = parsed.map((p: any) => ({
+          ...p,
+          features: typeof p.features === 'string' ? JSON.parse(p.features) : p.features
+        }));
+        setProducts(productsWithFeatures);
+      } else {
+        const data = await api.products.list();
+        setProducts(data.products);
+      }
     } catch (error) {
       console.error('Failed to load products:', error);
+      const data = await api.products.list();
+      setProducts(data.products);
     }
   };
 
