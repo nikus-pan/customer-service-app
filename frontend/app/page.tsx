@@ -23,6 +23,7 @@ export default function Home() {
   const [messageCount, setMessageCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -180,6 +181,10 @@ export default function Home() {
     return new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD' }).format(price);
   };
 
+  const toggleChat = () => {
+    setChatOpen(!chatOpen);
+  };
+
   return (
     <div className="min-h-screen bg-dark-50">
       {/* Header */}
@@ -237,11 +242,11 @@ export default function Home() {
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Main Content - Full Width Company Intro */}
       <main className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-120px)]">
-          {/* Left Panel - Company Intro */}
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Panel - Company Intro (2/3 width) */}
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
             {/* Tabs */}
             <div className="flex border-b border-dark-200">
               <button
@@ -353,128 +358,169 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Panel - AI Chat */}
-          <div className="bg-dark-900 rounded-2xl shadow-lg overflow-hidden flex flex-col">
-            {/* Chat Header */}
-            <div className="bg-dark-800 px-4 py-3 flex items-center justify-between border-b border-dark-700">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-white font-medium">AI 客服助手</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowHistory(!showHistory)}
-                  className="p-2 text-dark-400 hover:text-white transition-colors"
-                >
-                  <ChevronDown className={`w-5 h-5 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
-                </button>
-                <button
-                  onClick={handleClearChat}
-                  className="p-2 text-dark-400 hover:text-red-400 transition-colors"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+          {/* Right Panel - Info Cards */}
+          <div className="space-y-4">
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-dark-900 mb-4">聯繫我們</h3>
+              <div className="space-y-3 text-dark-600">
+                <p>📞 電話：02-1234-5678</p>
+                <p>📧 Email：support@example.com</p>
+                <p>💬 LINE@：@example</p>
+                <p className="text-sm text-dark-500">週一至週五 09:00-18:00</p>
               </div>
             </div>
-
-            {/* History Panel */}
-            {showHistory && (
-              <div className="bg-dark-800 border-b border-dark-700 max-h-48 overflow-y-auto">
-                {chatSessions.length > 0 ? (
-                  <div className="p-2">
-                    {chatSessions.map(session => (
-                      <button
-                        key={session.id}
-                        onClick={() => loadSession(session)}
-                        className="w-full text-left px-3 py-2 text-dark-300 hover:bg-dark-700 rounded-lg text-sm truncate"
-                      >
-                        {session.title || '新對話'}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-4 text-dark-500 text-sm text-center">尚無對話記錄</div>
-                )}
-              </div>
-            )}
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.length === 0 && (
-                <div className="text-center text-dark-500 py-8">
-                  <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>您好！我是 AI 客服助手</p>
-                  <p className="text-sm mt-2">請告訴我您的問題，我很樂意幫助您</p>
-                </div>
-              )}
-              {messages.map(message => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] ${
-                      message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap">{message.content}</p>
-                  </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="chat-bubble-ai">
-                    <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-dark-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                      <span className="w-2 h-2 bg-dark-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                      <span className="w-2 h-2 bg-dark-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+            <div className="bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl shadow-lg p-6 text-white">
+              <h3 className="text-lg font-semibold mb-2">需要立即協助？</h3>
+              <p className="text-primary-100 text-sm mb-4">點擊右下角的 AI 客服圖標開始諮詢</p>
+              <button 
+                onClick={toggleChat}
+                className="bg-white text-primary-600 px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition-colors"
+              >
+                開始諮詢
+              </button>
             </div>
-
-            {/* Prompt Register */}
-            {shouldPromptRegister && !token && (
-              <div className="bg-primary-600/20 border-t border-primary-600/30 p-3 text-center">
-                <p className="text-primary-300 text-sm mb-2">
-                  您已使用匿名諮詢 3 次
-                </p>
-                <button
-                  onClick={() => setShowAuthModal(true)}
-                  className="btn-primary text-sm"
-                >
-                  註冊保存對話記錄
-                </button>
-              </div>
-            )}
-
-            {/* Input */}
-            <form onSubmit={handleSubmit} className="bg-dark-800 p-4 border-t border-dark-700">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="輸入您的問題..."
-                  className="flex-1 bg-dark-700 text-white border-none rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-dark-400"
-                  disabled={isLoading}
-                />
-                <button
-                  type="submit"
-                  disabled={isLoading || !input.trim()}
-                  className="bg-primary-600 hover:bg-primary-700 disabled:bg-dark-600 text-white p-3 rounded-xl transition-colors"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       </main>
+
+      {/* Floating Chat Button */}
+      <button
+        onClick={toggleChat}
+        className={`fixed bottom-6 right-6 z-50 w-16 h-16 bg-primary-600 hover:bg-primary-700 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${
+          chatOpen ? 'scale-0' : 'scale-100'
+        }`}
+      >
+        <MessageCircle className="w-8 h-8 text-white" />
+      </button>
+
+      {/* Chat Window */}
+      {chatOpen && (
+        <div className="fixed bottom-6 right-6 z-50 w-96 h-[500px] bg-dark-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-300">
+          {/* Chat Header */}
+          <div className="bg-dark-800 px-4 py-3 flex items-center justify-between border-b border-dark-700">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-white font-medium">AI 客服助手</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                className="p-2 text-dark-400 hover:text-white transition-colors"
+              >
+                <ChevronDown className={`w-5 h-5 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+              </button>
+              <button
+                onClick={handleClearChat}
+                className="p-2 text-dark-400 hover:text-red-400 transition-colors"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={toggleChat}
+                className="p-2 text-dark-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* History Panel */}
+          {showHistory && (
+            <div className="bg-dark-800 border-b border-dark-700 max-h-32 overflow-y-auto">
+              {chatSessions.length > 0 ? (
+                <div className="p-2">
+                  {chatSessions.map(session => (
+                    <button
+                      key={session.id}
+                      onClick={() => loadSession(session)}
+                      className="w-full text-left px-3 py-2 text-dark-300 hover:bg-dark-700 rounded-lg text-sm truncate"
+                    >
+                      {session.title || '新對話'}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-dark-500 text-sm text-center">尚無對話記錄</div>
+              )}
+            </div>
+          )}
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.length === 0 && (
+              <div className="text-center text-dark-500 py-8">
+                <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>您好！我是 AI 客服助手</p>
+                <p className="text-sm mt-2">請告訴我您的問題，我很樂意幫助您</p>
+              </div>
+            )}
+            {messages.map(message => (
+              <div
+                key={message.id}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] ${
+                    message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap">{message.content}</p>
+                </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="chat-bubble-ai">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 bg-dark-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-2 h-2 bg-dark-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-2 h-2 bg-dark-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Prompt Register */}
+          {shouldPromptRegister && !token && (
+            <div className="bg-primary-600/20 border-t border-primary-600/30 p-3 text-center">
+              <p className="text-primary-300 text-sm mb-2">
+                您已使用匿名諮詢 3 次
+              </p>
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="btn-primary text-sm"
+              >
+                註冊保存對話記錄
+              </button>
+            </div>
+          )}
+
+          {/* Input */}
+          <form onSubmit={handleSubmit} className="bg-dark-800 p-4 border-t border-dark-700">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="輸入您的問題..."
+                className="flex-1 bg-dark-700 text-white border-none rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-dark-400"
+                disabled={isLoading}
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !input.trim()}
+                className="bg-primary-600 hover:bg-primary-700 disabled:bg-dark-600 text-white p-3 rounded-xl transition-colors"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Auth Modal */}
       {showAuthModal && (
