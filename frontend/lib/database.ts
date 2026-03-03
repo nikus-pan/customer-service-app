@@ -93,6 +93,7 @@ export async function initDatabase(): Promise<void> {
   `);
 
   initProducts(db);
+  initAdminUser(db);
   saveDatabase();
   console.log('Database initialized successfully');
 }
@@ -167,6 +168,18 @@ function initProducts(db: SqlJsDatabase): void {
     }
 
     console.log('Products initialized');
+  }
+
+  // Initialize default admin user
+  const bcrypt = require('bcryptjs');
+  const adminExists = db.exec("SELECT id FROM users WHERE email = 'admin@system.com'");
+  if (adminExists.length === 0 || adminExists[0].values.length === 0) {
+    const hashedPassword = bcrypt.hashSync('ADMIN', 10);
+    db.run(
+      "INSERT INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)",
+      [uuidv4(), 'admin@system.com', hashedPassword, '系統管理員', 'admin']
+    );
+    console.log('Admin user initialized');
   }
 }
 
