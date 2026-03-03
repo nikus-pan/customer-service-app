@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { getUserByEmail, createUser } from '@/lib/user-store';
+import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -17,7 +17,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email, password, and name are required' }, { status: 400 });
     }
 
-    const existingUser = getUserByEmail(email);
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
 
     if (existingUser) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
@@ -26,19 +30,23 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const id = uuidv4();
 
-    const newUser = createUser({
+    const { error } = await supabase.from('users').insert([{
       id,
       email,
-      password: hashedPassword,
       name,
-      role: 'free'
-    });
+      password: hashedPassword,
+      role: 'free',
+      member_level: '一般會員',
+      total_purchase: 0
+    }]);
+
+    if (error) throw error;
 
     const token = jwt.sign({ userId: id, email }, JWT_SECRET, { expiresIn: '7d' });
 
     return NextResponse.json({
       token,
-      user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role }
+      user: { id, email, name, role: 'free', member_level: '一般會員' }
     });
   } catch (error) {
     console.error('Register error:', error);

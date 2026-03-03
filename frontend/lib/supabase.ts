@@ -167,4 +167,43 @@ export const db = {
       if (error) throw error;
     },
   },
+  users: {
+    getByEmail: async (email: string) => {
+      const { data, error } = await supabase.from('users').select('*').eq('email', email).single();
+      if (error) return null;
+      return data;
+    },
+    create: async (user: { id: string; email: string; name: string; password: string; role?: string }) => {
+      const { error } = await supabase.from('users').insert([{
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        password: user.password,
+        role: user.role || 'free',
+        member_level: '一般會員',
+        total_purchase: 0
+      }]);
+      if (error) throw error;
+    },
+    getAll: async () => {
+      const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    updatePurchase: async (userId: string, amount: number) => {
+      const { data: user } = await supabase.from('users').select('*').eq('id', userId).single();
+      if (!user) return;
+      
+      const newTotal = (user.total_purchase || 0) + amount;
+      let newLevel = '一般會員';
+      
+      if (newTotal >= 50000) newLevel = '企業會員';
+      else if (newTotal >= 10000) newLevel = 'VIP 會員';
+      
+      await supabase.from('users').update({ 
+        total_purchase: newTotal,
+        member_level: newLevel
+      }).eq('id', userId);
+    },
+  },
 };

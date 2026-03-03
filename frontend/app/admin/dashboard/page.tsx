@@ -51,6 +51,16 @@ interface MemberLevel {
   color: string;
 }
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  member_level: string;
+  total_purchase: number;
+  created_at: string;
+}
+
 const defaultProducts: Product[] = [
   { id: '1', name: '智慧客服系統 Enterprise', description: '全方位企業客服解決方案', price: 49900, original_price: 59900, category: '軟體', features: '["AI 智慧對話", "多管道整合", "數據儀表板"]', stock: 100, published: true, intro: ' Enterprise 版本是專為大型企業設計的全方位客服解決方案，支援多人同時上線、部門分工、權限管理，並提供完整的數據分析儀表板。\n\n✅ 產品特色\n- AI 智慧對話：使用最新 AI 模型，理解客戶意圖並給予精準回覆\n- 多管道整合：支援 LINE、Facebook、Email、網站chat統一收件匣\n- 數據儀表板：即時顯示客服滿意度、響應時間、熱門問題等指標\n- API 串接：提供完整 API 與現有系統整合\n- 優先客服支援：享有 24 小時優先客服服務' },
   { id: '2', name: '智慧客服系統 Pro', description: '專業級客服系統', price: 19900, original_price: 25000, category: '軟體', features: '["AI 對話", "RAG 知識庫"]', stock: 50, published: true, intro: ' Pro 版本適合中小型企業，提供專業級客服功能。' },
@@ -97,6 +107,7 @@ export default function AdminDashboard() {
   const [sopContent, setSopContent] = useState(defaultSOP);
   const [coupons, setCoupons] = useState<Coupon[]>(defaultCoupons);
   const [memberLevels, setMemberLevels] = useState<MemberLevel[]>(defaultMemberLevels);
+  const [users, setUsers] = useState<User[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [newProduct, setNewProduct] = useState<Partial<Product>>({});
@@ -140,6 +151,9 @@ export default function AdminDashboard() {
       const { data: levelsData } = await supabase.from('member_levels').select('*').order('min_purchase', { ascending: true });
       if (levelsData) setMemberLevels(levelsData);
       else setMemberLevels(defaultMemberLevels);
+
+      const { data: usersData } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+      if (usersData) setUsers(usersData);
     } catch (error) {
       console.error('Failed to load data:', error);
       setProducts(defaultProducts);
@@ -478,7 +492,36 @@ export default function AdminDashboard() {
             </div>
             <div className="bg-white rounded-xl p-6">
               <h3 className="font-bold mb-4">會員列表</h3>
-              <p className="text-dark-500">（需連接正式資料庫）</p>
+              {users.length === 0 ? (
+                <p className="text-dark-500">尚無會員註冊</p>
+              ) : (
+                <table className="w-full">
+                  <thead className="bg-dark-50">
+                    <tr>
+                      <th className="text-left p-3">姓名</th>
+                      <th className="text-left p-3">Email</th>
+                      <th className="text-left p-3">會員等級</th>
+                      <th className="text-right p-3">累積消費</th>
+                      <th className="text-left p-3">註冊日期</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.filter(u => u.role !== 'admin').map(user => (
+                      <tr key={user.id} className="border-t">
+                        <td className="p-3">{user.name}</td>
+                        <td className="p-3">{user.email}</td>
+                        <td className="p-3">
+                          <span className="px-2 py-1 rounded text-xs bg-primary-100 text-primary-700">
+                            {user.member_level || '一般會員'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right font-bold text-green-600">{formatPrice(user.total_purchase || 0)}</td>
+                        <td className="p-3 text-dark-500 text-sm">{new Date(user.created_at).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         )}

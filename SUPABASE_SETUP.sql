@@ -57,6 +57,30 @@ CREATE TABLE IF NOT EXISTS sop (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  password TEXT NOT NULL,
+  role TEXT DEFAULT 'free',
+  member_level TEXT DEFAULT '一般會員',
+  total_purchase REAL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  password TEXT NOT NULL,
+  role TEXT DEFAULT 'free',
+  member_level TEXT DEFAULT '一般會員',
+  total_purchase REAL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Insert default data
 INSERT INTO products (id, name, description, price, original_price, category, features, stock, published, intro) VALUES
 ('1', '智慧客服系統 Enterprise', '全方位企業客服解決方案', 49900, 59900, '軟體', '["AI 智慧對話", "多管道整合", "數據儀表板"]', 100, 1, 'Enterprise 版本是專為大型企業設計的全方位客服解決方案，支援多人同時上線、部門分工、權限管理，並提供完整的數據分析儀表板。'),
