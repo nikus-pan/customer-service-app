@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send, Trash2, LogOut, LogIn, Menu, X, ChevronDown, ShoppingCart, Globe, Settings, Plus, Minus, CreditCard, Package, Users, BarChart3, FileText } from 'lucide-react';
+import { MessageCircle, Send, Trash2, LogOut, LogIn, Menu, X, ChevronDown, ShoppingCart, Globe, Plus, Minus, CreditCard } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useCart, CartProvider } from '@/lib/cart-context';
 import type { Product, Message, ChatSession } from '@/lib/types';
@@ -67,7 +67,6 @@ function MainContent() {
   const [activeTab, setActiveTab] = useState<'intro' | 'products'>('intro');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showCartModal, setShowCartModal] = useState(false);
-  const [showAdminModal, setShowAdminModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -83,8 +82,6 @@ function MainContent() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [adminTab, setAdminTab] = useState<'orders' | 'customers' | 'stats'>('orders');
-  const [orders, setOrders] = useState<any[]>([]);
   
   const { items: cartItems, addItem, removeItem, updateQuantity, clearCart, total: cartTotal } = useCart();
 
@@ -134,15 +131,6 @@ function MainContent() {
       setChatSessions(data.sessions);
     } catch (error) {
       console.error('Failed to load history:', error);
-    }
-  };
-
-  const loadOrders = async () => {
-    try {
-      const data = await fetch('/api/orders').then(r => r.json());
-      setOrders(data.orders || []);
-    } catch (error) {
-      console.error('Failed to load orders:', error);
     }
   };
 
@@ -288,10 +276,7 @@ function MainContent() {
     localStorage.setItem('lang', newLang);
   };
 
-  const openAdmin = () => {
-    setShowAdminModal(true);
-    loadOrders();
-  };
+  // Admin functionality removed - use /admin/login instead
 
   return (
     <div className="min-h-screen bg-dark-50">
@@ -331,15 +316,15 @@ function MainContent() {
               )}
             </button>
 
-            {/* Admin Button */}
-            {user && (
+            {/* Admin Button - Removed for security */}
+            {/* {user && user.role === 'admin' && (
               <button 
                 onClick={openAdmin}
                 className="p-2 text-dark-600 hover:text-primary-600"
               >
                 <Settings className="w-5 h-5" />
               </button>
-            )}
+            )} */}
 
             {user ? (
               <div className="flex items-center gap-3">
@@ -381,9 +366,7 @@ function MainContent() {
           </button>
           {user ? (
             <>
-              <button onClick={openAdmin} className="flex items-center gap-2 text-dark-600">
-                <Settings className="w-5 h-5" /> {t.admin}
-              </button>
+              {/* Admin link removed */}
               <button onClick={handleLogout} className="btn-secondary w-full">
                 {t.logout}
               </button>
@@ -675,97 +658,6 @@ function MainContent() {
                   <button onClick={handleCheckout} className="btn-primary w-full flex items-center justify-center gap-2">
                     <CreditCard className="w-5 h-5" /> {t.checkout}
                   </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Admin Modal */}
-      {showAdminModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-dark-900">{t.admin}</h2>
-              <button onClick={() => setShowAdminModal(false)} className="text-dark-400 hover:text-dark-600">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => setAdminTab('orders')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg ${adminTab === 'orders' ? 'bg-primary-600 text-white' : 'bg-dark-100'}`}
-              >
-                <Package className="w-4 h-4" /> {t.orders}
-              </button>
-              <button
-                onClick={() => setAdminTab('customers')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg ${adminTab === 'customers' ? 'bg-primary-600 text-white' : 'bg-dark-100'}`}
-              >
-                <Users className="w-4 h-4" /> {t.customers}
-              </button>
-              <button
-                onClick={() => setAdminTab('stats')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg ${adminTab === 'stats' ? 'bg-primary-600 text-white' : 'bg-dark-100'}`}
-              >
-                <BarChart3 className="w-4 h-4" /> {t.statistics}
-              </button>
-            </div>
-
-            {adminTab === 'orders' && (
-              <div className="space-y-3">
-                {orders.length === 0 ? (
-                  <p className="text-center text-dark-500 py-8">{lang === 'zh' ? '尚無訂單' : 'No orders yet'}</p>
-                ) : (
-                  orders.map(order => (
-                    <div key={order.id} className="p-4 bg-dark-50 rounded-xl">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="font-medium text-dark-900">{lang === 'zh' ? '訂單編號' : 'Order ID'}: {order.id.slice(0, 8)}...</p>
-                          <p className="text-sm text-dark-500">{new Date(order.created_at).toLocaleString()}</p>
-                        </div>
-                        <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-sm">
-                          {order.status}
-                        </span>
-                      </div>
-                      <div className="space-y-1">
-                        {order.items?.map((item: any, i: number) => (
-                          <p key={i} className="text-sm text-dark-600">
-                            {item.name} x{item.quantity} - {formatPrice(item.price * item.quantity)}
-                          </p>
-                        ))}
-                      </div>
-                      <p className="text-lg font-bold text-primary-600 mt-2">{t.total}: {formatPrice(order.total)}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            {adminTab === 'customers' && (
-              <div className="text-center text-dark-500 py-8">
-                <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>{lang === 'zh' ? '客戶管理功能' : 'Customer Management'}</p>
-              </div>
-            )}
-
-            {adminTab === 'stats' && (
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-primary-50 rounded-xl p-4 text-center">
-                  <div className="text-3xl font-bold text-primary-600">{orders.length}</div>
-                  <div className="text-dark-600">{lang === 'zh' ? '總訂單' : 'Total Orders'}</div>
-                </div>
-                <div className="bg-green-50 rounded-xl p-4 text-center">
-                  <div className="text-3xl font-bold text-green-600">
-                    {formatPrice(orders.reduce((sum, o) => sum + (o.total || 0), 0))}
-                  </div>
-                  <div className="text-dark-600">{lang === 'zh' ? '總營收' : 'Total Revenue'}</div>
-                </div>
-                <div className="bg-purple-50 rounded-xl p-4 text-center">
-                  <div className="text-3xl font-bold text-purple-600">{orders.filter(o => o.status === 'pending').length}</div>
-                  <div className="text-dark-600">{lang === 'zh' ? '待處理' : 'Pending'}</div>
                 </div>
               </div>
             )}
