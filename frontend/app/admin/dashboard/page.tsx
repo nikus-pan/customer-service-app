@@ -390,7 +390,7 @@ export default function AdminDashboard() {
                     <div>
                       <span className="font-bold text-lg">{c.code}</span>
                       <p className="text-sm text-dark-500">
-                        {c.discount_type === 'percent' ? `${c.discount_value}%` : formatPrice(c.discount_value)}} 折扣
+                        {c.discount_type === 'percent' ? `${c.discount_value}%` : formatPrice(c.discount_value)} 折扣
                         {c.min_purchase > 0 && `，滿 ${formatPrice(c.min_purchase)}`}
                       </p>
                       <p className="text-xs text-dark-400">期限：{c.valid_until} | 已用：{c.used_count}/{c.max_uses}</p>
