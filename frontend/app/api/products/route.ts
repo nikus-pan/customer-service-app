@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getDatabase, ensureInitialized } from '@/lib/database';
+import { getAll, ensureInitialized } from '@/lib/database';
 
 export async function GET() {
   try {
-    ensureInitialized();
-    const db = getDatabase();
-    const products = db.prepare('SELECT * FROM products ORDER BY price ASC').all();
+    await ensureInitialized();
+    const products = getAll('SELECT * FROM products ORDER BY price ASC');
 
-    const parsedProducts = (products as any[]).map(p => ({
+    const parsedProducts = products.map((p: any) => ({
       ...p,
       features: JSON.parse(p.features || '[]')
     }));

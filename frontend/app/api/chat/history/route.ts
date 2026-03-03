@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { getDatabase, ensureInitialized } from '@/lib/database';
+import { getOne, getAll, ensureInitialized } from '@/lib/database';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 function extractUserId(request: Request): { userId?: string; anonymousId?: string } {
   const authHeader = request.headers.get('authorization');
-  
+
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const token = authHeader.split(' ')[1];
@@ -23,28 +23,29 @@ function extractUserId(request: Request): { userId?: string; anonymousId?: strin
 
 export async function GET(request: Request) {
   try {
+    await ensureInitialized();
     const { userId, anonymousId } = extractUserId(request);
-
-    ensureInitialized();
-    const db = getDatabase();
 
     let sessions;
     if (userId) {
-      sessions = db.prepare(`
-        SELECT * FROM chat_sessions WHERE user_id = ? ORDER BY updated_at DESC LIMIT 20
-      `).all(userId);
+      sessions = getAll(
+        'SELECT * FROM chat_sessions WHERE user_id = ? ORDER BY updated_at DESC LIMIT 20',
+        [userId]
+      );
     } else if (anonymousId) {
-      sessions = db.prepare(`
-        SELECT * FROM chat_sessions WHERE anonymous_id = ? ORDER BY updated_at DESC LIMIT 10
-      `).all(anonymousId);
+      sessions = getAll(
+        'SELECT * FROM chat_sessions WHERE anonymous_id = ? ORDER BY updated_at DESC LIMIT 10',
+        [anonymousId]
+      );
     } else {
       return NextResponse.json({ error: 'User ID or Anonymous ID required' }, { status: 400 });
     }
 
-    const sessionsWithMessages = (sessions as any[]).map(session => {
-      const messages = db.prepare(`
-        SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC
-      `).all(session.id);
+    const sessionsWithMessages = sessions.map((session: any) => {
+      const messages = getAll(
+        'SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC',
+        [session.id]
+      );
       return { ...session, messages };
     });
 
@@ -57,21 +58,19 @@ export async function GET(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    await ensureInitialized();
     const { userId, anonymousId } = extractUserId(request);
     const { sessionId } = await request.json();
 
-    ensureInitialized();
-    const db = getDatabase();
-
     if (sessionId) {
-      db.prepare('DELETE FROM messages WHERE session_id = ?').run(sessionId);
-      db.prepare('DELETE FROM chat_sessions WHERE id = ?').run(sessionId);
+      runQuery('DELETE FROM messages WHERE session_id = ?', [sessionId]);
+      runQuery('DELETE FROM chat_sessions WHERE id = ?', [sessionId]);
     } else if (userId) {
-      db.prepare('DELETE FROM messages WHERE session_id IN (SELECT id FROM chat_sessions WHERE user_id = ?)').run(userId);
-      db.prepare('DELETE FROM chat_sessions WHERE user_id = ?').run(userId);
+      runQuery('DELETE FROM messages WHERE session_id IN (SELECT id FROM chat_sessions WHERE user_id = ?)', [userId]);
+      runQuery('DELETE FROM chat_sessions WHERE user_id = ?', [userId]);
     } else if (anonymousId) {
-      db.prepare('DELETE FROM messages WHERE session_id IN (SELECT id FROM chat_sessions WHERE anonymous_id = ?)').run(anonymousId);
-      db.prepare('DELETE FROM chat_sessions WHERE anonymous_id = ?').run(anonymousId);
+      runQuery('DELETE FROM messages WHERE session_id IN (SELECT id FROM chat_sessions WHERE anonymous_id = ?)', [anonymousId]);
+      runQuery('DELETE FROM chat_sessions WHERE anonymous_id = ?', [anonymousId]);
     }
 
     return NextResponse.json({ message: 'Chat cleared successfully' });
@@ -79,4 +78,9 @@ export async function DELETE(request: Request) {
     console.error('Clear error:', error);
     return NextResponse.json({ error: 'Failed to clear chat' }, { status: 500 });
   }
+}
+
+function runQuery(sql: string, params: any[] = []): void {
+  const { runQuery: _runQuery } = require('@/lib/database');
+  _runQuery(sql, params);
 }

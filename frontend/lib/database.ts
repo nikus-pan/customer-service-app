@@ -1,28 +1,31 @@
-import Database from 'better-sqlite3';
-import path from 'path';
+import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import path from 'path';
 
-const dbPath = path.join(process.cwd(), 'data/customer.db');
-let db: Database.Database;
+let db: SqlJsDatabase | null = null;
+let dbPath: string = '';
 
-export function getDatabase(): Database.Database {
-  if (!db) {
-    db = new Database(dbPath);
-    db.pragma('journal_mode = WAL');
-  }
-  return db;
-}
-
-export function initDatabase(): void {
-  const db = getDatabase();
+export async function initDatabase(): Promise<void> {
+  const SQL = await initSqlJs({
+    locateFile: (file) => `https://sql.js.org/dist/${file}`,
+  });
 
   const dataDir = path.join(process.cwd(), 'data');
-  const fs = require('fs');
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
   }
 
-  db.exec(`
+  dbPath = path.join(dataDir, 'customer.db');
+
+  if (fs.existsSync(dbPath)) {
+    const buffer = fs.readFileSync(dbPath);
+    db = new SQL.Database(buffer);
+  } else {
+    db = new SQL.Database();
+  }
+
+  db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
@@ -31,8 +34,10 @@ export function initDatabase(): void {
       role TEXT DEFAULT 'free',
       anonymous_id TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS chat_sessions (
       id TEXT PRIMARY KEY,
       user_id TEXT,
@@ -40,16 +45,20 @@ export function initDatabase(): void {
       title TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS messages (
       id TEXT PRIMARY KEY,
       session_id TEXT NOT NULL,
       role TEXT NOT NULL,
       content TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS products (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -59,26 +68,29 @@ export function initDatabase(): void {
       category TEXT,
       features TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+    )
+  `);
 
+  db.run(`
     CREATE TABLE IF NOT EXISTS anonymous_chats (
       id TEXT PRIMARY KEY,
       anonymous_id TEXT NOT NULL,
       message_count INTEGER DEFAULT 0,
       last_chat_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+    )
   `);
 
   initProducts(db);
-
+  saveDatabase();
   console.log('Database initialized successfully');
 }
 
-function initProducts(db: Database.Database): void {
-  const count = db.prepare('SELECT COUNT(*) as count FROM products').get() as { count: number };
-  
-  if (count.count === 0) {
+function initProducts(db: SqlJsDatabase): void {
+  const result = db.exec('SELECT COUNT(*) as count FROM products');
+  const count = result.length > 0 ? result[0].values[0][0] : 0;
+
+  if (count === 0) {
     const products = [
       {
         id: uuidv4(),
@@ -136,25 +148,67 @@ function initProducts(db: Database.Database): void {
       }
     ];
 
-    const insert = db.prepare(`
-      INSERT INTO products (id, name, description, price, image, category, features)
-      VALUES (@id, @name, @description, @price, @image, @category, @features)
-    `);
-
     for (const product of products) {
-      insert.run(product);
+      db.run(
+        `INSERT INTO products (id, name, description, price, image, category, features) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [product.id, product.name, product.description, product.price, product.image, product.category, product.features]
+      );
     }
 
     console.log('Products initialized');
   }
 }
 
-let initialized = false;
-export function ensureInitialized(): void {
-  if (!initialized) {
-    initDatabase();
-    initialized = true;
+export function saveDatabase(): void {
+  if (db && dbPath) {
+    const data = db.export();
+    const buffer = Buffer.from(data);
+    fs.writeFileSync(dbPath, buffer);
   }
 }
 
-export default { getDatabase, initDatabase, ensureInitialized };
+export function getDatabase(): SqlJsDatabase {
+  if (!db) {
+    throw new Error('Database not initialized. Call initDatabase() first.');
+  }
+  return db;
+}
+
+export function runQuery(sql: string, params: any[] = []): any {
+  const database = getDatabase();
+  database.run(sql, params);
+  saveDatabase();
+}
+
+export function getOne(sql: string, params: any[] = []): any {
+  const database = getDatabase();
+  const stmt = database.prepare(sql);
+  stmt.bind(params);
+  if (stmt.step()) {
+    const row = stmt.getAsObject();
+    stmt.free();
+    return row;
+  }
+  stmt.free();
+  return null;
+}
+
+export function getAll(sql: string, params: any[] = []): any[] {
+  const database = getDatabase();
+  const stmt = database.prepare(sql);
+  stmt.bind(params);
+  const results: any[] = [];
+  while (stmt.step()) {
+    results.push(stmt.getAsObject());
+  }
+  stmt.free();
+  return results;
+}
+
+let initialized = false;
+export async function ensureInitialized(): Promise<void> {
+  if (!initialized) {
+    await initDatabase();
+    initialized = true;
+  }
+}

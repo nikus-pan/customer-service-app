@@ -1,21 +1,20 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { getDatabase, ensureInitialized } from '@/lib/database';
+import { getOne, ensureInitialized } from '@/lib/database';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 export async function POST(request: Request) {
   try {
+    await ensureInitialized();
     const { email, password } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    ensureInitialized();
-    const db = getDatabase();
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+    const user = getOne('SELECT * FROM users WHERE email = ?', [email]);
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
