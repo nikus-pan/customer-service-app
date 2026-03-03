@@ -180,12 +180,12 @@ function extractKeywords(text: string): string[] {
     .split(/\s+/)
     .filter(w => w.length > 1);
   
-  const wordCount = new Map<string, number>();
+  const wordCount: Record<string, number> = {};
   words.forEach(w => {
-    wordCount.set(w, (wordCount.get(w) || 0) + 1 });
+    wordCount[w] = (wordCount[w] || 0) + 1;
   });
 
-  const keywords = Array.from(wordCount.entries())
+  const keywords = Object.entries(wordCount)
     .filter(([w]) => w.length > 2)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 50)
