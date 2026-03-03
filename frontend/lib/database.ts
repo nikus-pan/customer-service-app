@@ -81,6 +81,17 @@ export async function initDatabase(): Promise<void> {
     )
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      items TEXT NOT NULL,
+      total REAL NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   initProducts(db);
   saveDatabase();
   console.log('Database initialized successfully');
