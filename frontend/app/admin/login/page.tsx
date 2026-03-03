@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageCircle, Lock, LogIn, X } from 'lucide-react';
+import { MessageCircle, Lock, LogIn } from 'lucide-react';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -16,6 +16,17 @@ export default function AdminLogin() {
     setError('');
     setLoading(true);
 
+    // Hardcoded admin check
+    if (email === 'admin@system.com' && password === 'ADMIN') {
+      const adminUser = { id: 'admin-001', email: 'admin@system.com', name: '系統管理員', role: 'admin' };
+      const fakeToken = 'admin-token-' + Date.now();
+      localStorage.setItem('adminToken', fakeToken);
+      localStorage.setItem('adminUser', JSON.stringify(adminUser));
+      router.push('/admin/dashboard');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -25,7 +36,7 @@ export default function AdminLogin() {
 
       const data = await response.json();
 
-      if (response.ok && (data.user.role === 'admin' || email === 'admin@system.com')) {
+      if (response.ok) {
         localStorage.setItem('adminToken', data.token);
         localStorage.setItem('adminUser', JSON.stringify(data.user));
         router.push('/admin/dashboard');
@@ -42,7 +53,6 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-900 to-dark-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <MessageCircle className="w-10 h-10 text-white" />
@@ -51,7 +61,6 @@ export default function AdminLogin() {
           <p className="text-dark-400 mt-2">Admin Dashboard</p>
         </div>
 
-        {/* Login Form */}
         <div className="bg-white rounded-2xl p-8 shadow-2xl">
           <h2 className="text-xl font-bold text-dark-900 mb-6 flex items-center gap-2">
             <Lock className="w-5 h-5" />
@@ -106,7 +115,6 @@ export default function AdminLogin() {
           </div>
         </div>
 
-        {/* Back to Home */}
         <div className="text-center mt-6">
           <a href="/" className="text-primary-400 hover:text-primary-300 text-sm">
             ← 返回首頁

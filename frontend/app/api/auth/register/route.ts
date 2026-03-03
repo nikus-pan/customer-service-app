@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { runQuery, getOne, ensureInitialized } from '@/lib/database';
+import { getUserByEmail, createUser } from '@/lib/user-store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -11,14 +11,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 
 export async function POST(request: Request) {
   try {
-    await ensureInitialized();
     const { email, password, name } = await request.json();
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: 'Email, password, and name are required' }, { status: 400 });
     }
 
-    const existingUser = getOne('SELECT id FROM users WHERE email = ?', [email]);
+    const existingUser = getUserByEmail(email);
 
     if (existingUser) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
@@ -27,16 +26,19 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const id = uuidv4();
 
-    runQuery(
-      'INSERT INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)',
-      [id, email, hashedPassword, name, 'free']
-    );
+    const newUser = createUser({
+      id,
+      email,
+      password: hashedPassword,
+      name,
+      role: 'free'
+    });
 
     const token = jwt.sign({ userId: id, email }, JWT_SECRET, { expiresIn: '7d' });
 
     return NextResponse.json({
       token,
-      user: { id, email, name, role: 'free' }
+      user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role }
     });
   } catch (error) {
     console.error('Register error:', error);
