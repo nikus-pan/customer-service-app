@@ -338,8 +338,8 @@ export default function Home() {
                         <h3 className="font-semibold text-dark-900">{product.name}</h3>
                         <span className="text-primary-600 font-bold">{formatPrice(product.price)}</span>
                       </div>
-                      <p className="text-dark-500 text-sm mb-}</p>
-                      <div className="flex flex-wrap gap-23">{product.description">
+                      <p className="text-dark-500 text-sm mb-2">{product.description}</p>
+                      <div className="flex flex-wrap gap-2">
                         {product.features.slice(0, 3).map((feature, i) => (
                           <span key={i} className="text-xs bg-white px-2 py-1 rounded-full text-dark-500">
                             {feature}

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { searchSOP } from '@/lib/rag';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
