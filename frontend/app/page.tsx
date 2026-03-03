@@ -460,6 +460,11 @@ function MainContent() {
                         <span className="text-primary-600 font-bold">{formatPrice(product.price)}</span>
                       </div>
                       <p className="text-dark-500 text-sm mb-2">{product.description}</p>
+                      {product.intro && (
+                        <div className="text-dark-600 text-sm mb-3 whitespace-pre-line bg-white p-3 rounded-lg">
+                          {product.intro}
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-2 mb-3">
                         {product.features.slice(0, 3).map((feature, i) => (
                           <span key={i} className="text-xs bg-white px-2 py-1 rounded-full text-dark-500">

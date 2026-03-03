@@ -27,6 +27,7 @@ interface Product {
   features: string;
   stock: number;
   published: boolean;
+  intro: string;
 }
 
 interface Coupon {
@@ -50,9 +51,9 @@ interface MemberLevel {
 }
 
 const defaultProducts: Product[] = [
-  { id: '1', name: '智慧客服系統 Enterprise', description: '全方位企業客服解決方案', price: 49900, original_price: 59900, category: '軟體', features: '["AI 智慧對話", "多管道整合", "數據儀表板"]', stock: 100, published: true },
-  { id: '2', name: '智慧客服系統 Pro', description: '專業級客服系統', price: 19900, original_price: 25000, category: '軟體', features: '["AI 對話", "RAG 知識庫"]', stock: 50, published: true },
-  { id: '3', name: '客服系統 Starter', description: '入門級客服系統', price: 4900, original_price: 9900, category: '軟體', features: '["基本對話", "產品目錄"]', stock: 200, published: false },
+  { id: '1', name: '智慧客服系統 Enterprise', description: '全方位企業客服解決方案', price: 49900, original_price: 59900, category: '軟體', features: '["AI 智慧對話", "多管道整合", "數據儀表板"]', stock: 100, published: true, intro: ' Enterprise 版本是專為大型企業設計的全方位客服解決方案，支援多人同時上線、部門分工、權限管理，並提供完整的數據分析儀表板。\n\n✅ 產品特色\n- AI 智慧對話：使用最新 AI 模型，理解客戶意圖並給予精準回覆\n- 多管道整合：支援 LINE、Facebook、Email、網站chat統一收件匣\n- 數據儀表板：即時顯示客服滿意度、響應時間、熱門問題等指標\n- API 串接：提供完整 API 與現有系統整合\n- 優先客服支援：享有 24 小時優先客服服務' },
+  { id: '2', name: '智慧客服系統 Pro', description: '專業級客服系統', price: 19900, original_price: 25000, category: '軟體', features: '["AI 對話", "RAG 知識庫"]', stock: 50, published: true, intro: ' Pro 版本適合中小型企業，提供專業級客服功能。' },
+  { id: '3', name: '客服系統 Starter', description: '入門級客服系統', price: 4900, original_price: 9900, category: '軟體', features: '["基本對話", "產品目錄"]', stock: 200, published: false, intro: ' Starter 是入門首選，適合新創公司和個人工作室。' },
 ];
 
 const defaultSOP = `# 產品問題 FAQ
@@ -97,7 +98,7 @@ export default function AdminDashboard() {
   const [memberLevels, setMemberLevels] = useState<MemberLevel[]>(defaultMemberLevels);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [newProduct, setNewProduct] = useState<Product>({ id: '', name: '', description: '', price: 0, original_price: 0, category: '', features: '[]', stock: 0, published: false });
+  const [newProduct, setNewProduct] = useState<Partial<Product>>({});
   const [newCoupon, setNewCoupon] = useState<Partial<Coupon>>({});
 
   useEffect(() => {
@@ -170,9 +171,20 @@ export default function AdminDashboard() {
 
   const handleAddProduct = () => {
     if (!newProduct.name || !newProduct.price) return alert('請填寫產品名稱和價格');
-    const product = { ...newProduct, id: Date.now().toString() };
+    const product: Product = {
+      id: Date.now().toString(),
+      name: newProduct.name || '',
+      description: newProduct.description || '',
+      price: newProduct.price || 0,
+      original_price: newProduct.original_price || 0,
+      category: newProduct.category || '',
+      features: newProduct.features || '[]',
+      stock: newProduct.stock || 0,
+      published: newProduct.published || false,
+      intro: newProduct.intro || ''
+    };
     saveProducts([...products, product]);
-    setNewProduct({ id: '', name: '', description: '', price: 0, original_price: 0, category: '', features: '[]', stock: 0, published: false });
+    setNewProduct({});
   };
 
   const handleEditProduct = (product: Product) => setEditingProduct(product);
@@ -550,7 +562,8 @@ export default function AdminDashboard() {
               <input type="number" value={editingProduct.original_price} onChange={e => setEditingProduct({...editingProduct, original_price: +e.target.value})} placeholder="原價" className="w-full border rounded px-3 py-2" />
               <input value={editingProduct.category} onChange={e => setEditingProduct({...editingProduct, category: e.target.value})} placeholder="分類" className="w-full border rounded px-3 py-2" />
               <input type="number" value={editingProduct.stock} onChange={e => setEditingProduct({...editingProduct, stock: +e.target.value})} placeholder="庫存" className="w-full border rounded px-3 py-2" />
-              <textarea value={editingProduct.description} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} placeholder="描述" className="w-full border rounded px-3 py-2" rows={3} />
+              <textarea value={editingProduct.description} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} placeholder="簡短描述" className="w-full border rounded px-3 py-2" rows={2} />
+              <textarea value={editingProduct.intro || ''} onChange={e => setEditingProduct({...editingProduct, intro: e.target.value})} placeholder="軟體介紹（可使用換行）" className="w-full border rounded px-3 py-2" rows={6} />
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={editingProduct.published} onChange={e => setEditingProduct({...editingProduct, published: e.target.checked})} />
                 發布到首頁

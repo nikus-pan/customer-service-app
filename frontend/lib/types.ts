@@ -16,6 +16,7 @@ export interface Product {
   features: string[];
   stock?: number;
   published?: boolean;
+  intro?: string;
 }
 
 export interface Message {
