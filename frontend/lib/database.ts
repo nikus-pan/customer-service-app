@@ -64,9 +64,12 @@ export async function initDatabase(): Promise<void> {
       name TEXT NOT NULL,
       description TEXT,
       price REAL NOT NULL,
+      original_price REAL DEFAULT 0,
       image TEXT,
       category TEXT,
       features TEXT,
+      stock INTEGER DEFAULT 0,
+      published INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);

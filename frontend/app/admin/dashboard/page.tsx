@@ -26,6 +26,7 @@ interface Product {
   category: string;
   features: string;
   stock: number;
+  published: boolean;
 }
 
 interface Coupon {
@@ -49,9 +50,9 @@ interface MemberLevel {
 }
 
 const defaultProducts: Product[] = [
-  { id: '1', name: '智慧客服系統 Enterprise', description: '全方位企業客服解決方案', price: 49900, original_price: 59900, category: '軟體', features: '["AI 智慧對話", "多管道整合", "數據儀表板"]', stock: 100 },
-  { id: '2', name: '智慧客服系統 Pro', description: '專業級客服系統', price: 19900, original_price: 25000, category: '軟體', features: '["AI 對話", "RAG 知識庫"]', stock: 50 },
-  { id: '3', name: '客服系統 Starter', description: '入門級客服系統', price: 4900, original_price: 9900, category: '軟體', features: '["基本對話", "產品目錄"]', stock: 200 },
+  { id: '1', name: '智慧客服系統 Enterprise', description: '全方位企業客服解決方案', price: 49900, original_price: 59900, category: '軟體', features: '["AI 智慧對話", "多管道整合", "數據儀表板"]', stock: 100, published: true },
+  { id: '2', name: '智慧客服系統 Pro', description: '專業級客服系統', price: 19900, original_price: 25000, category: '軟體', features: '["AI 對話", "RAG 知識庫"]', stock: 50, published: true },
+  { id: '3', name: '客服系統 Starter', description: '入門級客服系統', price: 4900, original_price: 9900, category: '軟體', features: '["基本對話", "產品目錄"]', stock: 200, published: false },
 ];
 
 const defaultSOP = `# 產品問題 FAQ
@@ -96,7 +97,7 @@ export default function AdminDashboard() {
   const [memberLevels, setMemberLevels] = useState<MemberLevel[]>(defaultMemberLevels);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [newProduct, setNewProduct] = useState<Product>({ id: '', name: '', description: '', price: 0, original_price: 0, category: '', features: '[]', stock: 0 });
+  const [newProduct, setNewProduct] = useState<Product>({ id: '', name: '', description: '', price: 0, original_price: 0, category: '', features: '[]', stock: 0, published: false });
   const [newCoupon, setNewCoupon] = useState<Partial<Coupon>>({});
 
   useEffect(() => {
@@ -171,7 +172,7 @@ export default function AdminDashboard() {
     if (!newProduct.name || !newProduct.price) return alert('請填寫產品名稱和價格');
     const product = { ...newProduct, id: Date.now().toString() };
     saveProducts([...products, product]);
-    setNewProduct({ id: '', name: '', description: '', price: 0, original_price: 0, category: '', features: '[]', stock: 0 });
+    setNewProduct({ id: '', name: '', description: '', price: 0, original_price: 0, category: '', features: '[]', stock: 0, published: false });
   };
 
   const handleEditProduct = (product: Product) => setEditingProduct(product);
@@ -341,6 +342,7 @@ export default function AdminDashboard() {
                     <th className="text-right p-3">售價</th>
                     <th className="text-right p-3">原價</th>
                     <th className="text-right p-3">庫存</th>
+                    <th className="text-center p-3">發布</th>
                     <th className="text-center p-3">操作</th>
                   </tr>
                 </thead>
@@ -353,6 +355,14 @@ export default function AdminDashboard() {
                       <td className="p-3 text-right text-dark-400 line-through">{formatPrice(p.original_price)}</td>
                       <td className="p-3 text-right">
                         <span className={p.stock < 10 ? 'text-red-500' : ''}>{p.stock}</span>
+                      </td>
+                      <td className="p-3 text-center">
+                        <button onClick={() => {
+                          const newProducts = products.map(prod => prod.id === p.id ? { ...prod, published: !prod.published } : prod);
+                          saveProducts(newProducts);
+                        }} className={`px-2 py-1 rounded text-xs ${p.published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {p.published ? '已發布' : '未發布'}
+                        </button>
                       </td>
                       <td className="p-3 text-center">
                         <button onClick={() => handleEditProduct(p)} className="text-blue-600 mr-2"><Edit className="w-4 h-4 inline" /></button>
@@ -541,6 +551,10 @@ export default function AdminDashboard() {
               <input value={editingProduct.category} onChange={e => setEditingProduct({...editingProduct, category: e.target.value})} placeholder="分類" className="w-full border rounded px-3 py-2" />
               <input type="number" value={editingProduct.stock} onChange={e => setEditingProduct({...editingProduct, stock: +e.target.value})} placeholder="庫存" className="w-full border rounded px-3 py-2" />
               <textarea value={editingProduct.description} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} placeholder="描述" className="w-full border rounded px-3 py-2" rows={3} />
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={editingProduct.published} onChange={e => setEditingProduct({...editingProduct, published: e.target.checked})} />
+                發布到首頁
+              </label>
               <button onClick={handleSaveProduct} className="w-full bg-primary-600 text-white py-2 rounded">儲存</button>
             </div>
           </div>

@@ -441,7 +441,7 @@ function MainContent() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {products.map(product => (
+                  {products.filter(p => p.published).map(product => (
                     <div key={product.id} className="bg-dark-50 rounded-xl p-4 hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-semibold text-dark-900">{product.name}</h3>
