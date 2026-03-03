@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, Trash2, LogOut, LogIn, Menu, X, ChevronDown, ShoppingCart, Globe, Plus, Minus, CreditCard } from 'lucide-react';
 import { api } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 import { useCart, CartProvider } from '@/lib/cart-context';
 import type { Product, Message, ChatSession } from '@/lib/types';
 
@@ -118,22 +119,22 @@ function MainContent() {
 
   const loadProducts = async () => {
     try {
-      const storedProducts = localStorage.getItem('admin_products');
-      if (storedProducts) {
-        const parsed = JSON.parse(storedProducts);
-        const productsWithFeatures = parsed.map((p: any) => ({
-          ...p,
-          features: typeof p.features === 'string' ? JSON.parse(p.features) : p.features
-        }));
-        setProducts(productsWithFeatures);
-      } else {
-        const data = await api.products.list();
-        setProducts(data.products);
-      }
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('price', { ascending: true });
+
+      if (error) throw error;
+
+      const products = data?.map(p => ({
+        ...p,
+        features: typeof p.features === 'string' ? JSON.parse(p.features) : p.features,
+        published: p.published === 1
+      })) || [];
+      
+      setProducts(products);
     } catch (error) {
       console.error('Failed to load products:', error);
-      const data = await api.products.list();
-      setProducts(data.products);
     }
   };
 

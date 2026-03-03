@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Package, Users, BarChart3, LogOut, FileText, Plus, Edit, Trash2, X, Save, Tag, Truck, CreditCard, Mail, MessageCircle, Settings } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface Order {
   id: string;
@@ -117,48 +118,58 @@ export default function AdminDashboard() {
     loadData();
   }, [router]);
 
-  const loadData = () => {
-    const storedOrders = localStorage.getItem('admin_orders');
-    if (storedOrders) setOrders(JSON.parse(storedOrders));
-    
-    const storedProducts = localStorage.getItem('admin_products');
-    if (storedProducts) setProducts(JSON.parse(storedProducts));
-    else {
+  const loadData = async () => {
+    try {
+      const { data: productsData } = await supabase.from('products').select('*');
+      if (productsData && productsData.length > 0) {
+        setProducts(productsData.map(p => ({ ...p, published: p.published === 1 })));
+      } else {
+        setProducts(defaultProducts);
+      }
+
+      const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      if (ordersData) setOrders(ordersData.map(o => ({ ...o, items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items })));
+
+      const { data: couponsData } = await supabase.from('coupons').select('*');
+      if (couponsData) setCoupons(couponsData.map(c => ({ ...c, active: c.active === 1 })));
+      else setCoupons(defaultCoupons);
+
+      const { data: sopData } = await supabase.from('sop').select('content').eq('id', '1').single();
+      if (sopData?.content) setSopContent(sopData.content);
+
+      const { data: levelsData } = await supabase.from('member_levels').select('*').order('min_purchase', { ascending: true });
+      if (levelsData) setMemberLevels(levelsData);
+      else setMemberLevels(defaultMemberLevels);
+    } catch (error) {
+      console.error('Failed to load data:', error);
       setProducts(defaultProducts);
-      localStorage.setItem('admin_products', JSON.stringify(defaultProducts));
-    }
-    
-    const storedCoupons = localStorage.getItem('admin_coupons');
-    if (storedCoupons) setCoupons(JSON.parse(storedCoupons));
-    else {
       setCoupons(defaultCoupons);
-      localStorage.setItem('admin_coupons', JSON.stringify(defaultCoupons));
-    }
-    
-    const storedSOP = localStorage.getItem('admin_sop');
-    if (storedSOP) setSopContent(storedSOP);
-    
-    const storedLevels = localStorage.getItem('admin_member_levels');
-    if (storedLevels) setMemberLevels(JSON.parse(storedLevels));
-    else {
       setMemberLevels(defaultMemberLevels);
-      localStorage.setItem('admin_member_levels', JSON.stringify(defaultMemberLevels));
     }
   };
 
-  const saveProducts = (newProducts: Product[]) => {
+  const saveProducts = async (newProducts: Product[]) => {
     setProducts(newProducts);
-    localStorage.setItem('admin_products', JSON.stringify(newProducts));
+    const productsToSave = newProducts.map(p => ({
+      ...p,
+      published: p.published ? 1 : 0,
+      features: typeof p.features === 'string' ? p.features : JSON.stringify(p.features)
+    }));
+    await supabase.from('products').upsert(productsToSave, { onConflict: 'id' });
   };
 
-  const saveCoupons = (newCoupons: Coupon[]) => {
+  const saveCoupons = async (newCoupons: Coupon[]) => {
     setCoupons(newCoupons);
-    localStorage.setItem('admin_coupons', JSON.stringify(newCoupons));
+    const couponsToSave = newCoupons.map(c => ({
+      ...c,
+      active: c.active ? 1 : 0
+    }));
+    await supabase.from('coupons').upsert(couponsToSave, { onConflict: 'id' });
   };
 
-  const saveOrders = (newOrders: Order[]) => {
+  const saveOrders = async (newOrders: Order[]) => {
     setOrders(newOrders);
-    localStorage.setItem('admin_orders', JSON.stringify(newOrders));
+    await supabase.from('orders').upsert(newOrders, { onConflict: 'id' });
   };
 
   const handleLogout = () => {
@@ -233,10 +244,14 @@ export default function AdminDashboard() {
     saveOrders(orders.map(o => o.id === orderId ? { ...o, tracking_number, shipping_status } : o));
   };
 
-  const handleSaveSOP = () => localStorage.setItem('admin_sop', sopContent);
-  const handleSaveMemberLevels = (levels: MemberLevel[]) => {
+  const handleSaveSOP = async () => {
+    await supabase.from('sop').upsert({ id: '1', content: sopContent, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+    alert('SOP 已儲存');
+  };
+  const handleSaveMemberLevels = async (levels: MemberLevel[]) => {
     setMemberLevels(levels);
-    localStorage.setItem('admin_member_levels', JSON.stringify(levels));
+    const levelsToSave = levels.map((l, i) => ({ id: (i + 1).toString(), ...l }));
+    await supabase.from('member_levels').upsert(levelsToSave, { onConflict: 'id' });
   };
 
   if (!isAdmin) return null;

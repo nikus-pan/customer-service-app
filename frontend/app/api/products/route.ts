@@ -1,17 +1,22 @@
 import { NextResponse } from 'next/server';
-import { getAll, ensureInitialized } from '@/lib/database';
+import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    await ensureInitialized();
-    const products = getAll('SELECT * FROM products ORDER BY price ASC');
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('price', { ascending: true });
 
-    const parsedProducts = products.map((p: any) => ({
+    if (error) throw error;
+
+    const products = data?.map(p => ({
       ...p,
-      features: JSON.parse(p.features || '[]')
-    }));
+      features: typeof p.features === 'string' ? JSON.parse(p.features) : p.features,
+      published: p.published === 1
+    })) || [];
 
-    return NextResponse.json({ products: parsedProducts });
+    return NextResponse.json({ products });
   } catch (error) {
     console.error('Products error:', error);
     return NextResponse.json({ error: 'Failed to get products' }, { status: 500 });
